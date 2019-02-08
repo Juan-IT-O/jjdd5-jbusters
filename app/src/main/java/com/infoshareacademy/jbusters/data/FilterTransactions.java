@@ -62,8 +62,8 @@ public class FilterTransactions {
             transactionsBase.add(new Transaction(t));
         } );
         LOGGER.info("uruchomiono filtr bazowy: tabela wynikowa zawiera {} element/ów", transactionsBase.size());
-        if (transactionsBase.size() < 11) {
-            return new ArrayList<>();
+        if (transactionsBase.size() < minResultsNumber) {
+            return notEnoughtResultsAction();
         }
 
 
@@ -85,17 +85,17 @@ public class FilterTransactions {
                 List<Transaction> singleDistrictFilter = singleDistrictFilter(outerTransactionsList, userTransaction);
                 List<Transaction> flatAreafilter = flatAreaFilter(singleDistrictFilter, userTransaction, areaDiff);
                 flatAreafilter = invalidTransactionsRemover(flatAreafilter);
-                if (isEnoughtResults(flatAreafilter, minResultsNumber)) {
+                if (isEnoughtResults(flatAreafilter)) {
                     return flatAreafilter;
                 } else {
-                    return selectorFilter(true, false,outerTransactionsList, singleDistrictFilter, userTransaction);
+                    return selectorFilter(true, false, outerTransactionsList, singleDistrictFilter, userTransaction);
                 }
 
             } else {
 
                 List<Transaction> areaExpanded = flatAreaFilter(innerTransactionsList, userTransaction, areaDiffExpanded);
                 areaExpanded = invalidTransactionsRemover(areaExpanded);
-                if (isEnoughtResults(areaExpanded, minResultsNumber)) {
+                if (isEnoughtResults(areaExpanded)) {
                     return areaExpanded;
                 } else {
                     return selectorFilter(false, true, outerTransactionsList, new ArrayList<>(), userTransaction);
@@ -109,7 +109,7 @@ public class FilterTransactions {
                 List<Transaction> flatAreafilter = flatAreaFilter(multiDistrictFilter, userTransaction, areaDiff);
                 flatAreafilter = invalidTransactionsRemover(flatAreafilter);
 
-                if (isEnoughtResults(flatAreafilter, minResultsNumber)) {
+                if (isEnoughtResults(flatAreafilter)) {
                     return flatAreafilter;
                 } else {
                     return selectorFilter(false, false, outerTransactionsList, multiDistrictFilter, userTransaction);
@@ -119,7 +119,7 @@ public class FilterTransactions {
 
                 List<Transaction> areaExpanded = flatAreaFilter(innerTransactionsList, userTransaction, areaDiffExpanded);
                 areaExpanded = invalidTransactionsRemover(areaExpanded);
-                if (isEnoughtResults(areaExpanded, minResultsNumber)) {
+                if (isEnoughtResults(areaExpanded)) {
                     return areaExpanded;
                 } else {
                     return notEnoughtResultsAction();
@@ -130,7 +130,7 @@ public class FilterTransactions {
     }
 
 
-    public List<Transaction> singleDistrictFilter(List<Transaction> transactionsBase, Transaction userTransaction) {
+    private List<Transaction> singleDistrictFilter(List<Transaction> transactionsBase, Transaction userTransaction) {
         LOGGER.info("Single District filter aktywowany");
         List<Transaction> lista = transactionsBase.stream()
                 .filter(transaction -> (transaction.getDistrict().trim()).equalsIgnoreCase(userTransaction.getDistrict().trim()))
@@ -157,7 +157,7 @@ public class FilterTransactions {
         return lista;
     }
 
-    public List<Transaction> flatAreaFilter(List<Transaction> transactionsBase, Transaction userTransaction, BigDecimal areaDiff) {
+    private List<Transaction> flatAreaFilter(List<Transaction> transactionsBase, Transaction userTransaction, BigDecimal areaDiff) {
         LOGGER.info("Flat Area filter aktywowany");
 
         List<Transaction> lista = transactionsBase.stream()
@@ -168,12 +168,12 @@ public class FilterTransactions {
         return lista;
     }
 
-    public List<Transaction> invalidTransactionsRemover(List<Transaction> finallySortedList) {
+    private List<Transaction> invalidTransactionsRemover(List<Transaction> finallySortedList) {
         finallySortedList = removeOutliers(finallySortedList, priceDiff);
         return finallySortedList;
     }
 
-    public List<Transaction> removeOutliers(List<Transaction> transToClear, BigDecimal maxDiff) {
+    private List<Transaction> removeOutliers(List<Transaction> transToClear, BigDecimal maxDiff) {
 
         if (transToClear.size() < 11) return new ArrayList<>();
 
@@ -220,8 +220,8 @@ public class FilterTransactions {
         return transactionsList.get(index).getPricePerM2();
     }
 
-    private boolean isEnoughtResults(List<Transaction> listToCheck, int minSize) {
-        return listToCheck.size() >= minSize;
+    private boolean isEnoughtResults(List<Transaction> listToCheck) {
+        return listToCheck.size() >= minResultsNumber;
     }
 
 }
