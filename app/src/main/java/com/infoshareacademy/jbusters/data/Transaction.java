@@ -92,6 +92,7 @@ public class Transaction implements Serializable {
 
         LOGGER.info("Price value = {}", price);
         LOGGER.info("exchange rate value: {}", exchangeRate);
+        LOGGER.info("currency value: {}", currency);
         price = price.divide(exchangeRate, BigDecimal.ROUND_HALF_UP);
         pricePerM2 = pricePerM2.divide(exchangeRate, BigDecimal.ROUND_HALF_UP);
         typeOfMarket = typeOfMarket.toLowerCase();
@@ -104,9 +105,9 @@ public class Transaction implements Serializable {
                         "Dzielnica:\t\t" + district + "\n" +
                         "Ulica:\t\t\t" + street + "\n" +
                         "Rodzaj rynku:\t\t" + typeOfMarket + "\n" +
-                        "Cena:\t\t\t" + price + " " + staticFields.getCurrency() + "\n" +
+                        "Cena:\t\t\t" + price + " " + currency + "\n" +
                         "Wielkość:\t\t" + flatArea + " m2\n" +
-                        "Cena za m2:\t\t" + pricePerM2 + " " + staticFields.getCurrency() + "\n" +
+                        "Cena za m2:\t\t" + pricePerM2 + " " + currency + "\n" +
                         "Piętro:\t\t\t" + level + "\n" +
                         "Miejsce postojowe:\t" + parkingSpot + "\n" +
                         "Standard wykończenia:\t" + standardLevel + "\n" +

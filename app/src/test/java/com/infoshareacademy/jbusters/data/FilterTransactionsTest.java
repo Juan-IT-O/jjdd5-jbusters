@@ -9,13 +9,13 @@ import com.infoshareacademy.jbusters.model.Tranzaction;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,11 +32,18 @@ public class FilterTransactionsTest {
     private static List<Tranzaction> tempTranzactions = new ArrayList();
     private static List<Transaction> shortTransactions = new ArrayList();
     private static TranzactionDao tranzactionDao;
-    private static StaticFields staticfields;
+    private static StaticFields staticfields = mock(StaticFields.class);
 
 
     @BeforeClass
     public static void setDatabaseMockingValues() {
+        when(staticfields.getAreaDiff()).thenReturn(BigDecimal.valueOf(20.0));
+        when(staticfields.getAreaDiffExpanded()).thenReturn(BigDecimal.valueOf(25.0));
+        when(staticfields.getPriceDiff()).thenReturn(BigDecimal.valueOf(600.0));
+        when(staticfields.getMinResultsReq()).thenReturn(11);
+        when(staticfields.getCurrency()).thenReturn("PLN");
+        when(staticfields.getExchangeRate()).thenReturn(BigDecimal.ONE);
+
         shortTransactions.add(createTransaction(BigDecimal.TEN));
         //avg flat list
         tempTranzactions.add(createTranzaction(new BigDecimal(6000 * 45)));
@@ -55,7 +62,7 @@ public class FilterTransactionsTest {
 
         tranzactionDao = mock(TranzactionDao.class);
         when(tranzactionDao.basicFilter(anyObject(), eq("Gdynia"), anyString(), anyInt())).thenReturn(tempTranzactions);
-        when(tranzactionDao.basicFilter(anyObject(), eq("XXX"), anyString(), anyInt())).thenReturn(tempTranzactions.subList(0,1));
+        when(tranzactionDao.basicFilter(anyObject(), eq("XXX"), anyString(), anyInt())).thenReturn(tempTranzactions.subList(0, 1));
 
         districtWageList.add(new DistrictWage("Gdynia", "Chylonia", 1));
         districtWageList.add(new DistrictWage("Gdynia", "Obłuże", 1));
@@ -67,11 +74,6 @@ public class FilterTransactionsTest {
         districtWageDao = mock(DistrictWageDao.class);
         when(districtWageDao.findAll()).thenReturn(districtWageList);
 
-        staticfields = mock(StaticFields.class);
-        when(staticfields.getAreaDiff()).thenReturn(BigDecimal.valueOf(20.0));
-        when(staticfields.getAreaDiffExpanded()).thenReturn(BigDecimal.valueOf(25.0));
-        when(staticfields.getPriceDiff()).thenReturn(BigDecimal.valueOf(600.0));
-        when(staticfields.getMinResultsReq()).thenReturn(11);
 
     }
 
@@ -79,10 +81,19 @@ public class FilterTransactionsTest {
     public void notEnoughtInitResultsShouldReturnEmptyList() {
         //given
         FilterTransactions testObj = new FilterTransactions();
+        Whitebox.setInternalState(testObj, "tranzactionDao", tranzactionDao);
+        Whitebox.setInternalState(testObj, "staticFields", staticfields);
+        Whitebox.setInternalState(testObj, "districtWageDao", districtWageDao);
+        Whitebox.setInternalState(testObj, "areaDiff", BigDecimal.valueOf(20.0));
+        Whitebox.setInternalState(testObj, "areaDiffExpanded", BigDecimal.valueOf(25.0));
+        Whitebox.setInternalState(testObj, "priceDiff", BigDecimal.valueOf(600.0));
+        Whitebox.setInternalState(testObj, "minResultsNumber", 11);
+        Whitebox.setInternalState(testObj, "distrWagesHandler", new DistrWagesHandler(districtWageDao));
+
         Transaction testTrans = createTransaction(BigDecimal.valueOf(6000));
         testTrans.setCity("XXX");
         //when
-        List<Transaction>result = testObj.theGreatFatFilter(testTrans);
+        List<Transaction> result = testObj.theGreatFatFilter(testTrans);
         //then
         assertThat(result).isEmpty();
     }
@@ -128,6 +139,7 @@ public class FilterTransactionsTest {
     private static Tranzaction createTranzaction(BigDecimal price) {
 
         Tranzaction trans = new Tranzaction();
+
         trans.setTranzactionCity("Gdynia");
         trans.setTranzactionDistrict("Witomino");
         trans.setTranzactionDataTransaction(LocalDate.of(2018, 6, 20));
@@ -144,9 +156,13 @@ public class FilterTransactionsTest {
 
         return trans;
     }
-    private static Transaction createTransaction(BigDecimal price) {
 
+    private static Transaction createTransaction(BigDecimal price) {
         Transaction trans = new Transaction();
+
+        Whitebox.setInternalState(trans, "exchangeRate", new BigDecimal(1));
+        Whitebox.setInternalState(trans, "currency", "PLN");
+
         trans.setCity("Gdynia");
         trans.setDistrict("Witomino");
         trans.setTransactionDate(LocalDate.of(2018, 6, 20));
@@ -160,7 +176,7 @@ public class FilterTransactionsTest {
         trans.setStandardLevel(StandardLevel.DOBRY.getName());
         trans.setConstructionYear("1980");
         trans.setConstructionYearCategory(2);
-
+        System.out.println(trans);
         return trans;
     }
 
@@ -180,6 +196,8 @@ public class FilterTransactionsTest {
         trans.setStandardLevel(StandardLevel.DOBRY.getName());
         trans.setConstructionYear("1980");
         trans.setConstructionYearCategory(2);
+        trans.setImportant(false);
+        trans.setTransactionName("test");
 
         return trans;
     }
